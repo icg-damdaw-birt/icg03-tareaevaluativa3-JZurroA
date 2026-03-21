@@ -103,3 +103,31 @@ exports.deleteMovie = async (req, res) => {
     res.status(500).json({ error: 'No se pudo eliminar la película' });
   }
 };
+
+// PATCH /api/movies/:id/favorite - Marca/desmarca como favorito
+exports.toggleFavorite = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Obtener la película actual para verificar que pertenece al usuario
+    const movie = await prisma.movie.findFirst({
+      where: { id, ownerId: req.user.userId },
+    });
+
+    if (!movie) {
+      return res.status(404).json({ error: 'Película no encontrada' });
+    }
+
+    // 2. Cambiar el estado de isFavorite (toggle)
+    const updatedMovie = await prisma.movie.update({
+      where: { id },
+      data: {
+        isFavorite: !movie.isFavorite,  // Invierte el valor actual
+      },
+    });
+
+    res.json(updatedMovie);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar favorito' });
+  }
+};
